@@ -2,11 +2,12 @@
 import pynput
 from pynput import keyboard
 import os
-import selenium
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
-import pyautogui
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
 import time
 
 global base_dir
@@ -61,26 +62,30 @@ options.add_experimental_option("prefs", {
   "safebrowsing.enabled": True
 })
 driver = webdriver.Chrome("./chromedriver.exe", options = options)
+driver.implicitly_wait(5)
+wait = WebDriverWait(driver, 5)
 driver.get("https://energy.linkit.me/image-annotation-tool/")
 
 def open_image(base_dir, filename):
     driver.refresh()
     driver.find_element(By.XPATH, '/html/body/div[2]/div[1]/div[2]/div[3]/images-slider/div[1]/label[1]/input').send_keys(os.path.abspath(base_dir + '/' + filename))
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[2]/div[1]/div[2]/div[3]/images-slider/div[3]/div/img')))
     driver.find_element(By.XPATH, '/html/body/div[2]/div[1]/div[2]/div[3]/images-slider/div[3]/div/img').click()
 
 def save_image(filename):
     # splitext를 활용해 xml경로로 변경.
     xml_dir = os.path.splitext(filename)[0] + '.xml'
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[1]/div/div[1]/menu-dropdown/div/div[1]/i')))
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[1]/menu-dropdown/div/div[1]/i').click()
-    time.sleep(0.4)
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[1]/div/div[1]/menu-dropdown/div/div[2]/a[2]')))
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[1]/menu-dropdown/div/div[2]/a[2]').click()
-    time.sleep(0.4)
-    driver.find_element(By.CSS_SELECTOR, '#saveAsPascalVOC').click()
-    time.sleep(0.4)
+    wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#saveAsPascalVOC')))
+    driver.find_element(By.CSS_SELECTOR, '#saveAsPascalVOC').send_keys(Keys.ENTER)
     driver.find_element(By.CSS_SELECTOR, '#fileName').clear()
     driver.find_element(By.CSS_SELECTOR, '#fileName').send_keys(xml_dir)
+    wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'body > div:nth-child(46) > div.jconfirm-scrollpane > div > div > div > div > div > div > div > div.jconfirm-buttons > button.btn.btn-blue')))
     driver.find_element(By.CSS_SELECTOR, 'body > div:nth-child(46) > div.jconfirm-scrollpane > div > div > div > div > div > div > div > div.jconfirm-buttons > button.btn.btn-blue').click()
-    time.sleep(0.5)
+    wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'body > div.jconfirm.jconfirm-light.jconfirm-open > div.jconfirm-scrollpane > div > div > div > div > div > div > div > div.jconfirm-closeIcon')))
     driver.find_element(By.CSS_SELECTOR, 'body > div.jconfirm.jconfirm-light.jconfirm-open > div.jconfirm-scrollpane > div > div > div > div > div > div > div > div.jconfirm-closeIcon').click()
     return xml_dir
 
@@ -102,12 +107,10 @@ def on_release(key):
         driver.find_element(By.CSS_SELECTOR, '#category-select-box').send_keys(category_name)
         driver.find_element(By.CSS_SELECTOR, '#sidebar > label-panel > div > div:nth-child(2) > input').clear()
         driver.find_element(By.CSS_SELECTOR, '#sidebar > label-panel > div > div:nth-child(2) > input').send_keys(filename)
+        wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#sidebar > label-panel > div > div:nth-child(3) > attributes-list > div.clearfix > button')))
         driver.find_element(By.CSS_SELECTOR, '#sidebar > label-panel > div > div:nth-child(3) > attributes-list > div.clearfix > button').click()
-        time.sleep(0.2)
         driver.find_element(By.CSS_SELECTOR, '#sidebar > label-panel > div > div:nth-child(3) > attributes-list > div.clearfix > button').click()
-        time.sleep(0.2)
         driver.find_element(By.CSS_SELECTOR, '#sidebar > label-panel > div > div:nth-child(3) > attributes-list > div.clearfix > button').click()
-        time.sleep(0.2)
         Select(driver.find_element(By.CSS_SELECTOR, '#attr-name_0')).select_by_visible_text("창 개수")
         Select(driver.find_element(By.CSS_SELECTOR, '#attr-name_1')).select_by_visible_text("프레임 재질")
         Select(driver.find_element(By.CSS_SELECTOR, '#attr-name_2')).select_by_visible_text("개폐방식")
